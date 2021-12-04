@@ -66,6 +66,47 @@ class DB(object):
                 cur.close()
         return False
 
+    """Записывает пользователя как admin'а, если у него есть доступ к курсу"""
+    def setAdmin(self, email):
+        cur = 0
+        try:
+            cur = self.conn.cursor()
+            cur.execute("SELECT id FROM users WHERE email = '{}' LIMIT 1".format(email))
+            res = cur.fetchall()
+            if res:
+                cur.execute("SELECT * FROM admins WHERE admin_id = '{}' LIMIT 1".format(res[0][0]))
+                is_exist = cur.fetchall()
+                if not is_exist:
+                    cur.execute("INSERT INTO admins VALUES ({})".format(res[0][0]))
+                cur.close()
+                self.conn.commit()
+                return True
+            else:
+                print("User is not exist")
+        except (Exception, psycopg2.Error) as error:
+            print("Admin set is failed", error)
+        if cur:
+            cur.close()
+        return False
+
+    """Проверяет, является ли пользователь admin'ом"""
+    def checkAdmin(self, email):
+        cur = 0
+        try:
+            cur = self.conn.cursor()
+            cur.execute("SELECT id FROM users WHERE email = '{}' LIMIT 1".format(email))
+            res = cur.fetchall()
+            if res:
+                cur.execute("SELECT * FROM admins WHERE admin_id = '{}' LIMIT 1".format(res[0][0]))
+                is_exist = cur.fetchall()
+                if is_exist:
+                    return True
+        except (Exception, psycopg2.Error) as error:
+            print("Admin check is failed", error)
+        if cur:
+            cur.close()
+        return False
+
     version = 3
     migrations = [
         [

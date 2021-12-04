@@ -1,13 +1,8 @@
-import telebot
-env = open('.env')
-token = env.read()
-bot = telebot.TeleBot(token)
+import os
+from dotenv import load_dotenv, find_dotenv
+from database import DB
 
-@bot.message_handler(content_types=['text'])
-def get_text_message(message):
-    if message.text == 'hello':
-        bot.send_message(message.from_user.id, "И тебе привет")
-    else:
-        bot.send_message(message.from_user.id, message.text)
+load_dotenv(find_dotenv())  # Загрузка переменных окружения
+# token = os.environ.get('API_TOKEN')
 
-bot.polling(none_stop=True, interval=0)
+db = DB(os.environ.get('DATABASE_URL'))  # Экземпляр

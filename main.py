@@ -24,7 +24,7 @@ global num_of_question, status, score, choice, is_end_test
 is_end_test = 0
 num_of_question = 0
 score = [-2, -3, -2] #каждый элемент массива отображает количество правильных ответов в соответствующей теме
-status = -1111
+status = 2
 
 #Выгрузка вопросов из файлов
 def toStruct(filename):
@@ -51,8 +51,12 @@ start_message = '<бот-нэйм> создан для проверки уров
 
 @bot.message_handler(commands=['start'])
 def get_text_message(message):
+	global status
 	#проверка на прохождение теста
-	if status == 3:
+	if status == 2:
+		# verify = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Подтвердить почту', callback_data = 'verify'))
+		bot.send_message(message.from_user.id, 'Для начала вам требуется подтвердить свою почту, введите свой адресс.' )
+	elif status == 3:
 		bot.send_message(message.from_user.id, 'Нельзя вернуться в меню во время теста')
 	else:
 		mainmenu = types.InlineKeyboardMarkup()
@@ -67,9 +71,9 @@ def get_text_message(message):
 @bot.message_handler(commands=['get_results'])
 def get_text_message(message):
 	result = db.getReport(message.from_user.id)
-	print(result)
-	print(type(result))
-	if result != 'None':
+	# print(result)
+	# print(type(result))
+	if result is not None:
 		bot.send_message(message.from_user.id, result)
 	else:
 		bot.send_message(message.from_user.id, 'У вас недостаточно прав или вы не авторизованы!')
@@ -92,6 +96,9 @@ def callback_inline(call):
 		bot.edit_message_text(start_message, call.message.chat.id, call.message.message_id,
 							  reply_markup = mainmenu)
 
+	# elif call.data == 'verify':
+	# 	bot.send_message(call.message.chat.id, 'Введите почту, мы вышлем на нее код подтверждения')
+		# status = 
 	elif call.data == 'traning':
 		next_menu = types.InlineKeyboardMarkup()
 		bttns = [
@@ -110,21 +117,24 @@ def callback_inline(call):
 		status = 2
 		choice = 'social_networking'
 		next_menu3 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
-		bot.edit_message_text('Чтобы записаться на тренинг пришлите свою почту', call.message.chat.id, call.message.message_id,
+		next_menu3.add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
+		bot.edit_message_text('Чтобы записаться на тренинг мы отрпавили вам код подтверждения на почту, нажмите кнопку "Ввести код" и отправьте код', call.message.chat.id, call.message.message_id,
 							  reply_markup = next_menu3)
 
 	elif call.data == 'choice1':
 		status = 2
 		choice = 'passwords'
 		next_menu3 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
-		bot.edit_message_text('Чтобы записаться на тренинг пришлите свою почту', call.message.chat.id, call.message.message_id,
+		next_menu3.add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
+		bot.edit_message_text('Чтобы записаться на тренинг мы отрпавили вам код подтверждения на почту, нажмите кнопку "Ввести код" и отправьте код', call.message.chat.id, call.message.message_id,
 							  reply_markup = next_menu3)
 
 	elif call.data == 'choice2':
 		status = 2
 		choice = 'email'
 		next_menu3 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
-		bot.edit_message_text('Чтобы записаться на тренинг пришлите свою почту', call.message.chat.id, call.message.message_id,
+		next_menu3.add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
+		bot.edit_message_text('Чтобы записаться на тренинг мы отрпавили вам код подтверждения на почту, нажмите кнопку "Ввести код" и отправьте код', call.message.chat.id, call.message.message_id,
 							  reply_markup = next_menu3)
 
 
@@ -353,7 +363,6 @@ def get_text_message(message):
 	elif status == 2:
 		try:
 			if message.text.split('@')[1] == 'yandex.ru': #Прописать поиск по базе
-				bot.edit_message_reply_markup(message.chat.id, message_id = message.message_id - 1, reply_markup = '')
 				global code, users_mail
 				users_mail = message.text
 				code = sandler.sendMail(users_mail)
@@ -367,9 +376,9 @@ def get_text_message(message):
 	elif status == 10:
 		if code == message.text:
 			mainmenu = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
-			bot.send_message(message.from_user.id, 'Хорошо, мы вас записали', reply_markup = mainmenu)
-			db.registerUser(users_mail, message.from_user.id, choice)
-			status = 2
+			bot.send_message(message.from_user.id, 'Вы успешно авторизованы', reply_markup = mainmenu)
+			# db.registerUser(users_mail, message.from_user.id, choice)
+			status = 0
 		else:
 			resend = types.ReplyKeyboardMarkup(one_time_keyboard = True, resize_keyboard = True,).row('Отправить заново').row('Исправить почту').row('Повторить ввод кода')
 			bot.send_message(message.from_user.id, 'Неверный код', reply_markup = resend)

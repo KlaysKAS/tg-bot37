@@ -14,91 +14,23 @@ sandler = MailSandler(os.environ.get('MAIL_LOGIN'), os.environ.get('MAIL_PASS'))
 global a_and_q, num_of_question, status, score, choice
 
 num_of_question = 0
-score = [-2, -2, -3]
+score = [-2, -3, -2]
 status = -1111
-a_and_q = [
-	[
-		'Вопрос 1',
-		'Ответ 1',
-		'Ответ 2',
-		'Ответ 3(Верный)',
-		'Ответ 4',
-		3
-	],
-	[
-		'Вопрос 2',
-		'Ответ 1',
-		'Ответ 2',
-		'Ответ 3',
-		'Ответ 4(Верный)',
-		4
-	],
-	[
-		'Вопрос 3',
-		'Ответ 1(верный)',
-		'Ответ 2',
-		'Ответ 3',
-		'Ответ 4',
-		1
-	],
-	[
-		'Вопрос 4',
-		'Ответ 1',
-		'Ответ 2(Верный)',
-		'Ответ 3',
-		'Ответ 4',
-		2
-	],
-	[
-		'Вопрос 5',
-		'Ответ 1',
-		'Ответ 2',
-		'Ответ 3',
-		'Ответ 4(Верный)',
-		4
-	],
-	[
-		'Вопрос 6',
-		'Ответ 1(верный)',
-		'Ответ 2',
-		'Ответ 3',
-		'Ответ 4',
-		1
-	],
-	[
-		'Вопрос 7',
-		'Ответ 1',
-		'Ответ 2',
-		'Ответ 3',
-		'Ответ 4(Верный)',
-		4
-	],
-	[
-		'Вопрос 8',
-		'Ответ 1',
-		'Ответ 2(верный)',
-		'Ответ 3',
-		'Ответ 4',
-		2
-	],
-	[
-		'Вопрос 9',
-		'Ответ 1',
-		'Ответ 2',
-		'Ответ 3(верный)',
-		'Ответ 4',
-		3
-	],
-	[
-		'Вопрос 10',
-		'Ответ 1(верный)',
-		'Ответ 2',
-		'Ответ 3',
-		'Ответ 4',
-		1
-	]
 
-]
+def toStruct(filename):
+	f = open(filename, 'r', encoding='utf-8')
+
+	nodes = f.read().split('%\n')
+	struct = []
+	i = 0
+	for node in nodes:
+		struct.append(node.split('\n'))
+	f.close()
+	for i in range(len(struct)):
+		struct[i] = struct[i][:-1]
+	return struct
+a_and_q = toStruct('Вопросы.txt')
+# print(a_and_q)
 
 token = os.environ.get('API_TOKEN')
 bot = telebot.TeleBot(token)
@@ -124,13 +56,13 @@ def get_text_message(message):
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
 
-	global status, num_of_question, score, code, choice
+	global status, num_of_question, score, code, choice, is_end_test
 
 	if call.data == 'mainmenu':
 		num_of_question = 0
 		mainmenu  =  types.InlineKeyboardMarkup()
 		bttns = [types.InlineKeyboardButton(text = 'Записаться на тренинг', callback_data = 'key1')]
-		if status == 4 : 
+		if is_end_test == 1 : 
 			bttns.append(types.InlineKeyboardButton(text = 'Пройти финальный тест', callback_data = 'final_test'))
 		else:
 			bttns.append(types.InlineKeyboardButton(text = 'Узнать о кибербезопасности', callback_data = 'key2'))
@@ -193,13 +125,14 @@ def callback_inline(call):
 			questions.row(i)
 		bot.send_message(call.message.chat.id, a_and_q[num_of_question][0], reply_markup = questions)
 
-	elif call.data == 'key4':
+	elif call.data == 'end_the_test':
 		global themes
 		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
 		num_of_question = 0
 		themes = [0, 0, 0]
+		is_end_test = 1
+		print(score)
 		if score == [1,1,1]:
-			status = 4 #Тут подправить статус на статус пройденного теста
 			next_menu4 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
 			bot.send_message(call.message.chat.id, f'Тест завершен, вы набрали максимум баллов!\nУ вас хороший уровень знаний\nДля завершения подготовки остается пройти финальный тест! Вернитесь в начало и нажмите "Пройти финальный тест"', reply_markup = next_menu4)
 		else:
@@ -309,7 +242,7 @@ def get_text_message(message):
 	if (status == 3) and (message.text in a_and_q[num_of_question][1:-1]):
 		if num_of_question != 9:
 			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Следующий вопрос!', callback_data = 'key3'))
-			if message.text == a_and_q[num_of_question][a_and_q[num_of_question][5]]:
+			if message.text == a_and_q[num_of_question][int(a_and_q[num_of_question][5])]:
 				if num_of_question in [0,1,2]:
 					score[0] += 1
 				elif num_of_question in [3,4,5,6]:
@@ -320,8 +253,8 @@ def get_text_message(message):
 			else:
 				bot.send_message(message.from_user.id, 'Ответ неверный :с', reply_markup = stage1) #Написать почему!
 		else:
-			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Завершить тест', callback_data = 'key4'))
-			if message.text == a_and_q[num_of_question][a_and_q[num_of_question][5]]:
+			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Завершить тест', callback_data = 'end_the_test'))
+			if message.text == a_and_q[num_of_question][int(a_and_q[num_of_question][5])]:
 				score[2] += 1
 				bot.send_message(message.from_user.id, 'Ответ правильный!', reply_markup = stage1)
 			else:

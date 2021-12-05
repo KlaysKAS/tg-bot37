@@ -107,7 +107,7 @@ class DB(object):
             cur.close()
         return False
 
-    version = 3
+    version = 4
     migrations = [
         [
             "CREATE TABLE users (" +
@@ -132,6 +132,9 @@ class DB(object):
         [
             "ALTER TABLE registration RENAME COLUMN " +
             "email TO banks"
+        ],
+        [
+            "ALTER TABLE users ADD COLUMN telegram_id BIGINT"
         ]
     ]
 

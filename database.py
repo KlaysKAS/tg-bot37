@@ -80,10 +80,10 @@ class DB(object):
 
     def checkTgId(self, telegram_id):
         cur = self.conn.cursor()
-        cur.execute("SELECT id FROM users WHERE telegram_id = '{}' LIMIT 1".format(int(telegram_id)))
+        cur.execute("SELECT id FROM users WHERE telegram_id = {} LIMIT 1".format(int(telegram_id)))
         res = cur.fetchall()
         if res:
-            return True
+            return False
         else:
             return False
 
@@ -93,6 +93,8 @@ class DB(object):
         res = cur.fetchall()
         if res:
             cur.execute("UPDATE users SET telegram_id = '{}' WHERE email = '{}'".format(telegram_id, email))
+        else:
+            cur.execute("INSERT INTO users (email, telegram_id) VALUES ('{}', '{}')".format(email, telegram_id))
         cur.close()
         self.conn.commit()
         return res != []

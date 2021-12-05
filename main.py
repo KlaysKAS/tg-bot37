@@ -58,7 +58,6 @@ def get_text_message(message):
 	else:
 		status = 2
 	if status == 2:
-		# verify = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Подтвердить почту', callback_data = 'verify'))
 		bot.send_message(message.from_user.id, 'Для начала вам требуется подтвердить свою почту, введите свой адрес.' )
 	elif status == 3:
 		bot.send_message(message.from_user.id, 'Нельзя вернуться в меню во время теста')
@@ -336,7 +335,7 @@ def get_text_message(message):
 				bot.send_message(message.from_user.id, 'Ответ неверный :с', reply_markup = stage1)
 		else:
 			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Завершить тест', callback_data = 'end_the_test'))
-			if message.text == a_and_q[num_of_question][int(a_and_q[num_of_question][5])]:
+			if message.text == a_and_q[num_of_question][int(a_and_q[num_of_question][-1])]:
 				score[2] += 1
 				bot.send_message(message.from_user.id, 'Ответ правильный!', reply_markup = stage1)
 			else:
@@ -346,7 +345,7 @@ def get_text_message(message):
 	elif (status == 7) and (message.text in final_test[num_of_question][1:-1]):
 		if num_of_question != 9:
 			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Следующий вопрос!', callback_data = 'start_final_test'))
-			if message.text == final_test[num_of_question][int(final_test[num_of_question][5])]:
+			if message.text == final_test[num_of_question][int(final_test[num_of_question][-1])]:
 				if num_of_question in [0,1,2]:
 					score[0] += 1
 				elif num_of_question in [3,4,5,6]:
@@ -358,7 +357,7 @@ def get_text_message(message):
 				bot.send_message(message.from_user.id, 'Ответ неверный :с', reply_markup = stage1)
 		else:
 			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Завершить финальный тест', callback_data = 'end_the_final_test'))
-			if message.text == final_test[num_of_question][int(final_test[num_of_question][5])]:
+			if message.text == final_test[num_of_question][int(final_test[num_of_question][-1])]:
 				score[2] += 1
 				bot.send_message(message.from_user.id, 'Ответ правильный!', reply_markup = stage1)
 			else:
@@ -367,7 +366,7 @@ def get_text_message(message):
 
 	elif status == 2:
 		try:
-			if message.text.split('@')[1] == 'yandex.ru':
+			if message.text.split('@')[1] != '':
 				global code, users_mail
 				users_mail = message.text
 				code = sandler.sendMail(message.text)

@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 
 
-def createXSLX(name, data):
+def createXLSX(name, data):
     names = []
     email = []
     results = []

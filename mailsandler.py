@@ -1,3 +1,4 @@
+import random
 import smtplib
 import os
 from email.mime.multipart import MIMEMultipart
@@ -6,16 +7,11 @@ from email.mime.base import MIMEBase
 from email.mime.image import MIMEImage
 from email import encoders
 from platform import python_version
+from random import randrange
 
 
-def getHash(string):
-    p = 1
-    code = 0
-    for i in string:
-        code += int((ord(i) * p)) % 900000 + 100000
-        p *= 36
-        p = p % 1e10
-    return code % 900000 + 100000
+def getCode():
+    return randrange(100000, 999999)
 
 
 class MailSandler(object):
@@ -25,7 +21,7 @@ class MailSandler(object):
         self.server = 'smtp.mail.ru'
 
     def sendMail(self, recipient):
-        code = getHash(recipient)
+        code = getCode()
 
         sender = self.user
         subject = 'Подтвердите свою регистрацию на курсах по цифровой безопасности'

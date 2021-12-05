@@ -3,10 +3,12 @@ from dotenv import load_dotenv, find_dotenv
 import telebot
 from telebot import types
 from database import DB
+from mailsandler import MailSandler
 
 load_dotenv(find_dotenv())  # Загрузка переменных окружения
 
 db = DB(os.environ.get('DATABASE_URL'))  # Экземпляр
+sandler = MailSandler(os.environ.get('MAIL_LOGIN'), os.environ.get('MAIL_PASS'))
 
 global a_and_q, num_of_question, status, score
 
@@ -97,13 +99,13 @@ a_and_q = [
 
 ]
 
-
 token = os.environ.get('API_TOKEN')
 bot = telebot.TeleBot(token)
 
 start_message = '<бот-нэйм> создан для проверки уровня знаний о кибербезопасности и обучения сотрудников навыкам обхода угроз при использовании Интернета.\nХотите узнать больше о кибербезопасности или записаться на тренинг?\n'
 
-@bot.message_handler(commands = ['start'])
+
+@bot.message_handler(commands=['start'])
 def get_text_message(message):
 	global status
 	if status == 3:
@@ -115,7 +117,8 @@ def get_text_message(message):
 		mainmenu.add(key1, key2)
 		bot.send_message(message.from_user.id, start_message , reply_markup = mainmenu)
 
-@bot.callback_query_handler(func = lambda call: True)
+
+@bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
 	global status, num_of_question, score
 	if call.data == 'mainmenu':
@@ -200,8 +203,10 @@ def callback_inline(call):
 	else:
 		pass
 
-@bot.message_handler(content_types = ['text'])
+  
+@bot.message_handler(content_types=['text'])
 def get_text_message(message):
+
 	global status, num_of_question, score
 	if (status == 3) and (message.text in a_and_q[num_of_question][1:-1]):
 		if num_of_question != 9:

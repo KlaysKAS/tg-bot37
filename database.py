@@ -12,6 +12,7 @@ class DB(object):
         try:
             cur = self.conn.cursor()
             cur.execute("SELECT * FROM users WHERE email = '{}' LIMIT 1".format(email))
+            cur.close()
             is_exist = cur.fetchall()
             return is_exist
         except (Exception, psycopg2.Error) as error:
@@ -42,13 +43,15 @@ class DB(object):
     """Регистрирует пользователя на прохождение курса, если ему разрешен доступ
         course: banks, passwords, social_networking
     """
-    def registerUser(self, email, course):
+    def registerUser(self, email, telegram_id, course):
         cur = 0
         try:
             cur = self.conn.cursor()
             cur.execute("SELECT id FROM users WHERE email = '{}' LIMIT 1".format(email))
             res = cur.fetchall()
             if res:
+                cur.execute("UPDATE users SET telegram_id = '{}' WHERE user_id = '{}'"
+                            .format(int(telegram_id), res[0][0]))
                 cur.execute("SELECT * FROM registration WHERE user_id = '{}'".format(res[0][0]))
                 is_exist = cur.fetchall()
                 if is_exist:
@@ -67,7 +70,7 @@ class DB(object):
         return False
 
     """Записывает пользователя как admin'а, если у него есть доступ к курсу"""
-    def setAdmin(self, email):
+    def setAdmin(self, email, telegram_id):
         cur = 0
         try:
             cur = self.conn.cursor()
@@ -78,6 +81,8 @@ class DB(object):
                 is_exist = cur.fetchall()
                 if not is_exist:
                     cur.execute("INSERT INTO admins VALUES ({})".format(res[0][0]))
+                    cur.execute("UPDATE users SET telegram_id = '{}' WHERE email = '{}'"
+                                .format(int(telegram_id), email))
                 cur.close()
                 self.conn.commit()
                 return True
@@ -90,15 +95,16 @@ class DB(object):
         return False
 
     """Проверяет, является ли пользователь admin'ом"""
-    def checkAdmin(self, email):
+    def checkAdmin(self, telegram_id):
         cur = 0
         try:
             cur = self.conn.cursor()
-            cur.execute("SELECT id FROM users WHERE email = '{}' LIMIT 1".format(email))
+            cur.execute("SELECT id FROM users WHERE telegram_id = '{}' LIMIT 1".format(int(telegram_id)))
             res = cur.fetchall()
             if res:
                 cur.execute("SELECT * FROM admins WHERE admin_id = '{}' LIMIT 1".format(res[0][0]))
                 is_exist = cur.fetchall()
+                cur.close()
                 if is_exist:
                     return True
         except (Exception, psycopg2.Error) as error:
@@ -107,7 +113,23 @@ class DB(object):
             cur.close()
         return False
 
-    version = 3
+    def getReport(self, telegram_id):
+        cur = self.conn.cursor()
+        cur.execute("SELECT id, email FROM users WHERE telegram_id = {} LIMIT 1".format(telegram_id))
+        user = cur.fetchall()
+        if user and self.checkAdmin(telegram_id):
+            address = user[0][1].split('@')
+            cur.execute("SELECT full_name, email, result FROM users WHERE email LIKE '%@{}'".format(address[1]))
+            result = cur.fetchall()
+            cur.close()
+            return result
+        else:
+            print("Access not granted or user is not defined")
+            if cur:
+                cur.close()
+            return []
+
+    version = 4
     migrations = [
         [
             "CREATE TABLE users (" +
@@ -132,6 +154,9 @@ class DB(object):
         [
             "ALTER TABLE registration RENAME COLUMN " +
             "email TO banks"
+        ],
+        [
+            "ALTER TABLE users ADD COLUMN telegram_id BIGINT"
         ]
     ]
 

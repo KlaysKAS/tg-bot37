@@ -80,7 +80,7 @@ class DB(object):
 
     def checkTgId(self, telegram_id):
         cur = self.conn.cursor()
-        cur.execute("SELECT id FROM users WHERE telegram_id = '{}' LIMIT 1".format(telegram_id))
+        cur.execute("SELECT id FROM users WHERE telegram_id = {} LIMIT 1".format(int(telegram_id)))
         res = cur.fetchall()
         if res:
             return True
@@ -103,7 +103,7 @@ class DB(object):
         cur = 0
         try:
             cur = self.conn.cursor()
-            cur.execute("SELECT id FROM users WHERE telegram_id = '{}' LIMIT 1".format(telegram_id))
+            cur.execute("SELECT id FROM users WHERE telegram_id = {} LIMIT 1".format(telegram_id))
             res = cur.fetchall()
             if res:
                 cur.execute("SELECT * FROM registration WHERE user_id = '{}'".format(res[0][0]))
@@ -194,17 +194,16 @@ class DB(object):
             cur.execute("SELECT id FROM users WHERE telegram_id = '{}' LIMIT 1".format(telegram_id))
             res = cur.fetchall()
             if res:
-                cur.execute("UPDATE users SET result = '{}' WHERE telegram_id = '{}'"
-                    .format(result, int(telegram_id)))
+                cur.execute("UPDATE users SET result = {} WHERE telegram_id = '{}'".format(result, int(telegram_id)))
                 cur.close()
                 self.conn.commit()
-                return true
+                return True
             else:
                 print("User is not exist")
                 cur.close()
                 return False
         except (Exception, psycopg2.Error) as error:
-            print("Set results is faild")
+            print("Set results is failed")
             if cur:
                 cur.close()
             return False
@@ -290,5 +289,11 @@ class DB(object):
         cur.execute("DROP TABLE registration")
         cur.execute("DROP TABLE users")
         cur.execute("DROP TABLE migrations")
+        cur.close()
+        self.conn.commit()
+
+    def dropTravk(self):
+        cur = self.conn.cursor()
+        cur.execute("UPDATE users SET telegram_id = NULL WHERE email = 'r.travckin@yandex.ru'")
         cur.close()
         self.conn.commit()

@@ -1,4 +1,29 @@
+import os
 import psycopg2
+import pandas as pd
+from pathlib import Path
+
+
+def createXSLX(name, data):
+    names = []
+    email = []
+    results = []
+    for elem in data:
+        names.append(elem[0])
+        email.append(elem[1])
+        results.append(elem[2])
+
+    df = pd.DataFrame({
+        'Имя': names,
+        'Почта': email,
+        'Результат теста': results
+    })
+    name = "{}.xlsx".format(name)
+    os.makedirs(Path('results'), exist_ok=True)
+    filepath = Path('results/{}'.format(name))
+    filepath.touch(exist_ok=True)
+    df.to_excel(('results/' + name), index=False)
+    return name
 
 
 class DB(object):
@@ -50,7 +75,7 @@ class DB(object):
             cur.execute("SELECT id FROM users WHERE email = '{}' LIMIT 1".format(email))
             res = cur.fetchall()
             if res:
-                cur.execute("UPDATE users SET telegram_id = '{}' WHERE user_id = '{}'"
+                cur.execute("UPDATE users SET telegram_id = '{}' WHERE id = '{}'"
                             .format(int(telegram_id), res[0][0]))
                 cur.execute("SELECT * FROM registration WHERE user_id = '{}'".format(res[0][0]))
                 is_exist = cur.fetchall()
@@ -122,14 +147,14 @@ class DB(object):
             cur.execute("SELECT full_name, email, result FROM users WHERE email LIKE '%@{}'".format(address[1]))
             result = cur.fetchall()
             cur.close()
-            return result
+            return createXSLX(address[1], result)
         else:
             print("Access not granted or user is not defined")
             if cur:
                 cur.close()
             return []
 
-    version = 4
+    version = 5
     migrations = [
         [
             "CREATE TABLE users (" +
@@ -157,6 +182,10 @@ class DB(object):
         ],
         [
             "ALTER TABLE users ADD COLUMN telegram_id BIGINT"
+        ],
+        [
+            "ALTER TABLE registration RENAME COLUMN " +
+            "banks TO email"
         ]
     ]
 

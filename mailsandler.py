@@ -28,11 +28,7 @@ class MailSandler(object):
         h2 = 'Это CyberSecurityTeacherBot!'
         text = 'Здравствуйте, вы отправили запрос на прохождение курсов по защите данных,' \
                '<br> <b>ваш код: {}.</b> Пришлите его мне в telegram.'.format(code)
-        html = '<html><head></head><body><h2>' + h2 + '</h2><p>' + text + '</p><img src="cid:image1" /></body></head>'
-
-        fp = open('CyberBot.jpg', 'rb')  # Read image
-        msgImage = MIMEImage(fp.read())
-        fp.close()
+        html = '<html><head></head><body><h2>' + h2 + '</h2><p>' + text + '</p></body></head>'
 
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
@@ -47,8 +43,6 @@ class MailSandler(object):
 
         msg.attach(part_text)
         msg.attach(part_html)
-        msgImage.add_header('Content-ID', '<image1>')
-        msg.attach(msgImage)
 
         mail = smtplib.SMTP_SSL(self.server)
         mail.login(self.user, self.password)

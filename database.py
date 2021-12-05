@@ -10,15 +10,23 @@ def createXLSX(name, data):
     try:
         names = []
         email = []
+        course_passwords = []
+        course_social = []
+        course_email = []
         results = []
         for elem in data:
             names.append(elem[0])
             email.append(elem[1])
-            results.append(elem[2])
-
+            course_passwords.append('записан' if elem[2] else 'не записан')
+            course_email.append('записан' if elem[3] else 'не записан')
+            course_social.append('записан' if elem[4] else 'не записан')
+            results.append(elem[5])
         df = pd.DataFrame({
             'Имя': names,
             'Почта': email,
+            'Курс по паролям': course_passwords,
+            'Курс по электронной почте': course_email,
+            'Курс по социальным сетям': course_social,
             'Результат теста': results
         })
         name = "{}.xlsx".format(name)
@@ -150,10 +158,12 @@ class DB(object):
         user = cur.fetchall()
         if user and self.checkAdmin(telegram_id):
             address = user[0][1].split('@')
-            cur.execute("SELECT full_name, email, result FROM users WHERE email LIKE '%@{}'".format(address[1]))
+            cur.execute("SELECT full_name, users.email, passwords, registration.email, social_networking, result " +
+                        "FROM users " +
+                        "JOIN registration ON user_id = id WHERE users.email LIKE '%@{}'".format(address[1]))
             result = cur.fetchall()
             cur.close()
-            return createXSLX(address[1], result)
+            return createXLSX(address[1], result)
         else:
             print("Access not granted or user is not defined")
             if cur:

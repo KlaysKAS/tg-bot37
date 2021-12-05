@@ -11,11 +11,13 @@ load_dotenv(find_dotenv())  # Загрузка переменных окруже
 db = DB(os.environ.get('DATABASE_URL'))  # Экземпляр
 sandler = MailSandler(os.environ.get('MAIL_LOGIN'), os.environ.get('MAIL_PASS'))
 
-global a_and_q, num_of_question, status, score, choice
+global a_and_q, num_of_question, status, score, choice, is_end_test
 
+is_end_test = 0
 num_of_question = 0
 score = [-2, -3, -2]
 status = -1111
+
 
 def toStruct(filename):
 	f = open(filename, 'r', encoding='utf-8')
@@ -131,7 +133,7 @@ def callback_inline(call):
 		num_of_question = 0
 		themes = [0, 0, 0]
 		is_end_test = 1
-		print(score)
+		status = 0
 		if score == [1,1,1]:
 			next_menu4 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
 			bot.send_message(call.message.chat.id, f'Тест завершен, вы набрали максимум баллов!\nУ вас хороший уровень знаний\nДля завершения подготовки остается пройти финальный тест! Вернитесь в начало и нажмите "Пройти финальный тест"', reply_markup = next_menu4)
@@ -220,7 +222,7 @@ def callback_inline(call):
 
 	# Процесс подтверждения почты
 	elif call.data == 'accept':
-		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = 'theme_social')
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
 		status = 10
 	elif call.data == 'resend':
 		status = 11
@@ -229,6 +231,7 @@ def callback_inline(call):
 		accept = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
 		bot.send_message(message.from_user.id, 'Мы отправили повторно на вашу почту код подтверждения, когда вы его получите, нажмите кнопку "Ввести код" и введите код', reply_markup = accept)
 	elif call.data == 'change_mail':
+		# bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
 		status = 2
 
 	else:
@@ -262,7 +265,7 @@ def get_text_message(message):
 		num_of_question += 1
 
 	elif status == 2:
-		try:   
+		try:
 			if message.text.split('@')[1] == 'yandex.ru': #Прописать поиск по базе
 				bot.edit_message_reply_markup(message.chat.id, message_id = message.message_id - 1, reply_markup = '')
 				global code, users_mail
@@ -277,7 +280,8 @@ def get_text_message(message):
 			print(e)
 	elif status == 10:
 		if code == message.text:
-			bot.send_message(message.from_user.id, 'Хорошо, мы вас записали')
+			mainmenu = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
+			bot.send_message(message.from_user.id, 'Хорошо, мы вас записали', reply_markup = mainmenu)
 			db.registerUser(users_mail, message.from_user.id, choice)
 			status = 2
 		else:

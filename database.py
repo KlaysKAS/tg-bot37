@@ -80,7 +80,7 @@ class DB(object):
 
     def checkTgId(self, telegram_id):
         cur = self.conn.cursor()
-        cur.execute("SELECT id FROM users WHERE telegram_id = '{}' LIMIT 1".format(telegram_id))
+        cur.execute("SELECT id FROM users WHERE telegram_id = '{}' LIMIT 1".format(int(telegram_id)))
         res = cur.fetchall()
         if res:
             return True
@@ -194,17 +194,16 @@ class DB(object):
             cur.execute("SELECT id FROM users WHERE telegram_id = '{}' LIMIT 1".format(telegram_id))
             res = cur.fetchall()
             if res:
-                cur.execute("UPDATE users SET result = '{}' WHERE telegram_id = '{}'"
-                    .format(result, int(telegram_id)))
+                cur.execute("UPDATE users SET result = {} WHERE telegram_id = '{}'".format(result, int(telegram_id)))
                 cur.close()
                 self.conn.commit()
-                return true
+                return True
             else:
                 print("User is not exist")
                 cur.close()
                 return False
         except (Exception, psycopg2.Error) as error:
-            print("Set results is faild")
+            print(error)
             if cur:
                 cur.close()
             return False

@@ -31,7 +31,9 @@ def toStruct(filename):
 	for i in range(len(struct)):
 		struct[i] = struct[i][:-1]
 	return struct
+
 a_and_q = toStruct('Вопросы.txt')
+final_test = toStruct('Вопросы финал.txt')
 # print(a_and_q)
 
 token = os.environ.get('API_TOKEN')
@@ -120,12 +122,20 @@ def callback_inline(call):
 							  reply_markup = next_menu2)
 
 	elif call.data == 'key3':
-		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
 		status = 3
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
 		questions = types.ReplyKeyboardMarkup(True, one_time_keyboard = True)
 		for i in a_and_q[num_of_question][1:-1]:
 			questions.row(i)
 		bot.send_message(call.message.chat.id, a_and_q[num_of_question][0], reply_markup = questions)
+
+	elif call.data == 'key4':
+		status = 7
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
+		questions = types.ReplyKeyboardMarkup(True, one_time_keyboard = True)
+		for i in final_test[num_of_question][1:-1]:
+			questions.row(i)
+		bot.send_message(call.message.chat.id, final_test[num_of_question][0], reply_markup = questions)
 
 	elif call.data == 'end_the_test':
 		global themes
@@ -150,7 +160,24 @@ def callback_inline(call):
 				next_menu5.add(types.InlineKeyboardButton(text = 'Соц сети и мессенджеры', callback_data = 'theme_social'))
 			summ = score[0] + score[1] + score [2] + 7
 			bot.send_message(call.message.chat.id, f'Вы набрали {summ} баллов, тест показал что некоторые темы вам незнакомы. Вам стоит узнать больше о правилах поведения в интернете.', reply_markup = next_menu5)
-
+	
+	elif call.data == 'end_the_final_test':
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
+		num_of_question = 0
+		status = 0
+		if score == [1,1,1]:
+			next_menu4 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
+			bot.send_message(call.message.chat.id, f'Тест завершен, вы набрали максимум баллов!\nУ вас хороший уровень знаний\nДля завершения подготовки остается пройти финальный тест! Вернитесь в начало и нажмите "Пройти финальный тест"', reply_markup = next_menu4)
+		else:
+			next_menu5 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
+			summ = score[0] + score[1] + score [2] + 7
+			if summ in [1,2,3,4,5,6,7]:
+				is_end_test = 0
+				bot.send_message(call.message.chat.id, f'Вы набрали {summ} баллов, тест не пройден, вам стоит прочитать информацию о безопасности в интернете еще раз.', reply_markup = next_menu5)
+			elif summ in [8,9]:
+				bot.send_message(call.message.chat.id, f'Вы набрали {summ} баллов, тест пройден, поздравлем!', reply_markup = next_menu5)
+			else:
+				bot.send_message(call.message.chat.id, f'Вы набрали {summ} баллов, тест пройден, поздравлем!', reply_markup = next_menu5)
 	#Подробности о темах
 	elif call.data == 'theme_mails':
 		next_menu6 = types.InlineKeyboardMarkup()
@@ -219,6 +246,25 @@ def callback_inline(call):
 		details.add(types.InlineKeyboardButton(text = 'Вернуться в меню', callback_data = 'mainmenu'))
 		bot.send_message(call.message.chat.id, 'Заполучить ваши данные из социальных сетей можно двумя способами: простым и сложным.\nСложный способ подразумевает непосредственный взлом вашего соединения или устройства. Если хакер знает ваш IP-адрес или ваше имя, ему не составит труда выяснить, кто вы такой. Если, к тому же, он узнает ваш номер телефона, привязанный к IP, то можете считать себя уже взломанным. Эти взломы – как раз та главная причина, по которой у вас должен быть VPN на всех устройствах, где установлены социальные сети.\nОднако есть и более простой способ стать жертвой кражи данных или личности. Сообщая кому-то номер телефона, который вы используете для двухфакторной аутентификации, а также напрямую делясь личной информацией, вы ставите себя под удар. Хакеру не нужно будет делать ничего, кроме как просто спросить.\nНеобходимо всегда скептически относиться к подозрительным профилям людей, с которыми вы лично не знакомы. Есть огромная вероятность того, что хакер скрывается за таким фейковым аккаунтом. Подобные аферисты – искусные психологи и манипуляторы, которые точно знают, как играть на чувствах и эмоциях людей.\nлавное правило интернета гласит: если что-то звучит слишком хорошо, чтобы быть правдой – это обман.', reply_markup = details)
 
+	elif call.data == 'final_test':
+		score = [-2, -3, -2]
+		final_test_menu = types.InlineKeyboardMarkup()
+		bttns = [
+			types.InlineKeyboardButton(text = 'Готов!', callback_data = 'final_test_questions'),
+			types.InlineKeyboardButton(text = 'Назад', callback_data = 'mainmenu')
+		]
+		for i in bttns:
+			final_test_menu.add(i)
+		bot.edit_message_text('Сейчас мы узнаем насколько хорошо вы усвоили информацию. Готовы?', call.message.chat.id, call.message.message_id,
+							  reply_markup = final_test_menu)
+
+	elif call.data == 'final_test_questions':
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
+		status = 7
+		questions = types.ReplyKeyboardMarkup(True, one_time_keyboard = True)
+		for i in final_test[num_of_question][1:-1]:
+			questions.row(i)
+		bot.send_message(call.message.chat.id, final_test[num_of_question][0], reply_markup = questions)
 
 	# Процесс подтверждения почты
 	elif call.data == 'accept':
@@ -240,7 +286,6 @@ def callback_inline(call):
   
 @bot.message_handler(content_types=['text'])
 def get_text_message(message):
-
 	global status, num_of_question, score
 	if (status == 3) and (message.text in a_and_q[num_of_question][1:-1]):
 		if num_of_question != 9:
@@ -254,14 +299,36 @@ def get_text_message(message):
 					score[2] += 1
 				bot.send_message(message.from_user.id, 'Ответ правильный!', reply_markup = stage1)
 			else:
-				bot.send_message(message.from_user.id, 'Ответ неверный :с', reply_markup = stage1) #Написать почему!
+				bot.send_message(message.from_user.id, 'Ответ неверный :с', reply_markup = stage1)
 		else:
 			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Завершить тест', callback_data = 'end_the_test'))
 			if message.text == a_and_q[num_of_question][int(a_and_q[num_of_question][5])]:
 				score[2] += 1
 				bot.send_message(message.from_user.id, 'Ответ правильный!', reply_markup = stage1)
 			else:
-				bot.send_message(message.from_user.id, 'Ответ неверный :с', reply_markup = stage1) #Написать почему!
+				bot.send_message(message.from_user.id, 'Ответ неверный :с', reply_markup = stage1)
+		num_of_question += 1
+
+	elif (status == 7) and (message.text in final_test[num_of_question][1:-1]):
+		if num_of_question != 9:
+			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Следующий вопрос!', callback_data = 'key4'))
+			if message.text == final_test[num_of_question][int(final_test[num_of_question][5])]:
+				if num_of_question in [0,1,2]:
+					score[0] += 1
+				elif num_of_question in [3,4,5,6]:
+					score[1] += 1
+				elif num_of_question in [7,8,9]:
+					score[2] += 1
+				bot.send_message(message.from_user.id, 'Ответ правильный!', reply_markup = stage1)
+			else:
+				bot.send_message(message.from_user.id, 'Ответ неверный :с', reply_markup = stage1)
+		else:
+			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Завершить финальный тест', callback_data = 'end_the_final_test'))
+			if message.text == final_test[num_of_question][int(final_test[num_of_question][5])]:
+				score[2] += 1
+				bot.send_message(message.from_user.id, 'Ответ правильный!', reply_markup = stage1)
+			else:
+				bot.send_message(message.from_user.id, 'Ответ неверный :с', reply_markup = stage1)
 		num_of_question += 1
 
 	elif status == 2:

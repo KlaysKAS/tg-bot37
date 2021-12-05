@@ -8,17 +8,25 @@ from mailsandler import MailSandler
 
 load_dotenv(find_dotenv())  # Загрузка переменных окружения
 
+#Соединение с бд
 db = DB(os.environ.get('DATABASE_URL'))  # Экземпляр
 sandler = MailSandler(os.environ.get('MAIL_LOGIN'), os.environ.get('MAIL_PASS'))
 
-global a_and_q, num_of_question, status, score, choice, is_end_test
+global num_of_question, status, score, choice, is_end_test
+
+#описание глобальных переменных
+#num_of_question порядковый номер вопроса, на котором остановился пользователь, создан для итерации по тесту
+#status состояние диалога, чтобы в момент теста юзер не мог его прервать и вернуться в стартовое меню, чтобы отслеживать состояние и соответствующе реагировать на сообщения
+#score счет правильных ответов в тесте и финальном тесте, создан для дальнейшей выгрузки в отчет
+#choice запоминает выбранную тему для тренинга и используется для загрузки в бд
+#is_end_test проверка на пройденный первый тест, чтобы юзер не мог пройти финальный тест без прохождения начального, в случае проваленного финального теста обнуляется, чтобы юзер заново изучил материал
 
 is_end_test = 0
 num_of_question = 0
-score = [-2, -3, -2]
+score = [-2, -3, -2] #каждый элемент массива отображает количество правильных ответов в соответствующей теме
 status = -1111
 
-
+#Выгрузка вопросов из файлов
 def toStruct(filename):
 	f = open(filename, 'r', encoding='utf-8')
 
@@ -34,7 +42,6 @@ def toStruct(filename):
 
 a_and_q = toStruct('Вопросы.txt')
 final_test = toStruct('Вопросы финал.txt')
-# print(a_and_q)
 
 token = os.environ.get('API_TOKEN')
 bot = telebot.TeleBot(token)
@@ -44,17 +51,28 @@ start_message = '<бот-нэйм> создан для проверки уров
 
 @bot.message_handler(commands=['start'])
 def get_text_message(message):
-
-	global status
-
+	#проверка на прохождение теста
 	if status == 3:
 		bot.send_message(message.from_user.id, 'Нельзя вернуться в меню во время теста')
 	else:
 		mainmenu = types.InlineKeyboardMarkup()
-		key1 = types.InlineKeyboardButton(text = 'Записаться на тренинг', callback_data = 'key1')
-		key2 = types.InlineKeyboardButton(text = 'Узнать о кибербезопасности', callback_data = 'key2')
-		mainmenu.add(key1, key2)
+		bttns = [types.InlineKeyboardButton(text = 'Записаться на тренинг', callback_data = 'traning')]
+		if is_end_test == 1 : 
+			bttns.append(types.InlineKeyboardButton(text = 'Пройти финальный тест', callback_data = 'final_test'))
+		else:
+			bttns.append(types.InlineKeyboardButton(text = 'Узнать о кибербезопасности', callback_data = 'info_cs'))
+		mainmenu.add(*bttns)
 		bot.send_message(message.from_user.id, start_message , reply_markup = mainmenu)
+
+@bot.message_handler(commands=['get_results'])
+def get_text_message(message):
+	result = db.getReport(message.from_user.id)
+	print(result)
+	print(type(result))
+	if result != 'None':
+		bot.send_message(message.from_user.id, result)
+	else:
+		bot.send_message(message.from_user.id, 'У вас недостаточно прав или вы не авторизованы!')
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -65,16 +83,16 @@ def callback_inline(call):
 	if call.data == 'mainmenu':
 		num_of_question = 0
 		mainmenu  =  types.InlineKeyboardMarkup()
-		bttns = [types.InlineKeyboardButton(text = 'Записаться на тренинг', callback_data = 'key1')]
+		bttns = [types.InlineKeyboardButton(text = 'Записаться на тренинг', callback_data = 'traning')]
 		if is_end_test == 1 : 
 			bttns.append(types.InlineKeyboardButton(text = 'Пройти финальный тест', callback_data = 'final_test'))
 		else:
-			bttns.append(types.InlineKeyboardButton(text = 'Узнать о кибербезопасности', callback_data = 'key2'))
+			bttns.append(types.InlineKeyboardButton(text = 'Узнать о кибербезопасности', callback_data = 'info_cs'))
 		mainmenu.add(*bttns)
 		bot.edit_message_text(start_message, call.message.chat.id, call.message.message_id,
 							  reply_markup = mainmenu)
 
-	elif call.data == 'key1':
+	elif call.data == 'traning':
 		next_menu = types.InlineKeyboardMarkup()
 		bttns = [
 			types.InlineKeyboardButton(text = 'Поведение в социальных сетях и мессенджерах', callback_data = 'choice0'),
@@ -110,10 +128,10 @@ def callback_inline(call):
 							  reply_markup = next_menu3)
 
 
-	elif call.data == 'key2':
+	elif call.data == 'info_cs':
 		next_menu2 = types.InlineKeyboardMarkup()
 		bttns = [
-			types.InlineKeyboardButton(text = 'Готов!', callback_data = 'key3'),
+			types.InlineKeyboardButton(text = 'Готов!', callback_data = 'start_test'),
 			types.InlineKeyboardButton(text = 'Назад', callback_data = 'mainmenu')
 		]
 		for i in bttns:
@@ -121,7 +139,7 @@ def callback_inline(call):
 		bot.edit_message_text('Хотите узнать больше о кибербезопасности?\nДля начала выясним текущий уровень ваших знаний об опасностях в интернете. Готовы?', call.message.chat.id, call.message.message_id,
 							  reply_markup = next_menu2)
 
-	elif call.data == 'key3':
+	elif call.data == 'start_test':
 		status = 3
 		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
 		questions = types.ReplyKeyboardMarkup(True, one_time_keyboard = True)
@@ -129,7 +147,7 @@ def callback_inline(call):
 			questions.row(i)
 		bot.send_message(call.message.chat.id, a_and_q[num_of_question][0], reply_markup = questions)
 
-	elif call.data == 'key4':
+	elif call.data == 'start_final_test':
 		status = 7
 		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
 		questions = types.ReplyKeyboardMarkup(True, one_time_keyboard = True)
@@ -178,6 +196,7 @@ def callback_inline(call):
 				bot.send_message(call.message.chat.id, f'Вы набрали {summ} баллов, тест пройден, поздравлем!', reply_markup = next_menu5)
 			else:
 				bot.send_message(call.message.chat.id, f'Вы набрали {summ} баллов, тест пройден, поздравлем!', reply_markup = next_menu5)
+	
 	#Подробности о темах
 	elif call.data == 'theme_mails':
 		next_menu6 = types.InlineKeyboardMarkup()
@@ -289,7 +308,7 @@ def get_text_message(message):
 	global status, num_of_question, score
 	if (status == 3) and (message.text in a_and_q[num_of_question][1:-1]):
 		if num_of_question != 9:
-			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Следующий вопрос!', callback_data = 'key3'))
+			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Следующий вопрос!', callback_data = 'start_test'))
 			if message.text == a_and_q[num_of_question][int(a_and_q[num_of_question][5])]:
 				if num_of_question in [0,1,2]:
 					score[0] += 1
@@ -311,7 +330,7 @@ def get_text_message(message):
 
 	elif (status == 7) and (message.text in final_test[num_of_question][1:-1]):
 		if num_of_question != 9:
-			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Следующий вопрос!', callback_data = 'key4'))
+			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Следующий вопрос!', callback_data = 'start_final_test'))
 			if message.text == final_test[num_of_question][int(final_test[num_of_question][5])]:
 				if num_of_question in [0,1,2]:
 					score[0] += 1

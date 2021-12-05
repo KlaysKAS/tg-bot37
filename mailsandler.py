@@ -24,10 +24,10 @@ class MailSandler(object):
         code = getCode()
 
         sender = self.user
-        subject = 'Подтвердите свою регистрацию на курсах по цифровой безопасности'
+        subject = 'Подтвердите свою почту для участия в прохождении курсов по цифровой безопасности'
         h2 = 'Это CyberSecurityTeacherBot!'
-        text = 'Здравствуйте, вы отправили запрос на прохождение курсов по защите данных,' \
-               '<br> <b>ваш код: {}.</b> Пришлите его мне в telegram.'.format(code)
+        text = 'Здравствуйте, вы отправили мне почту и теперь её необходимо подтвердить.' \
+               '<br><b>Ваш код: {}.</b><br>Пришлите его мне в telegram.'.format(code)
         html = '<html><head></head><body><h2>' + h2 + '</h2><p>' + text + '</p></body></head>'
 
         msg = MIMEMultipart('alternative')

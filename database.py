@@ -99,15 +99,13 @@ class DB(object):
 
     """Регистрирует пользователя на прохождение курса, если ему разрешен доступ
         course: banks, passwords, social_networking"""
-    def registerUser(self, email, telegram_id, course):
+    def registerUser(self, telegram_id, course):
         cur = 0
         try:
             cur = self.conn.cursor()
-            cur.execute("SELECT id FROM users WHERE email = '{}' LIMIT 1".format(email))
+            cur.execute("SELECT id FROM users WHERE telegram_id = '{}' LIMIT 1".format(telegram_id))
             res = cur.fetchall()
             if res:
-                cur.execute("UPDATE users SET telegram_id = '{}' WHERE id = '{}'"
-                            .format(int(telegram_id), res[0][0]))
                 cur.execute("SELECT * FROM registration WHERE user_id = '{}'".format(res[0][0]))
                 is_exist = cur.fetchall()
                 if is_exist:

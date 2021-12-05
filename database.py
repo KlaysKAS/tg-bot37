@@ -78,6 +78,25 @@ class DB(object):
                 cur.close()
         return False
 
+    def checkTgId(self, telegram_id):
+        cur = self.conn.cursor()
+        cur.execute("SELECT id FROM users WHERE telegram_id = '{}' LIMIT 1".format(telegram_id))
+        res = cur.fetchall()
+        if res:
+            return True
+        else:
+            return False
+
+    def setTgId(self, email, telegram_id):
+        cur = self.conn.cursor()
+        cur.execute("SELECT id FROM users WHERE email = '{}' LIMIT 1".format(email))
+        res = cur.fetchall()
+        if res:
+            cur.execute("UPDATE users SET telegram_id = '{}' WHERE email = '{}'".format(telegram_id, email))
+        cur.close()
+        self.conn.commit()
+        return res != []
+
     """Регистрирует пользователя на прохождение курса, если ему разрешен доступ
         course: banks, passwords, social_networking"""
     def registerUser(self, email, telegram_id, course):

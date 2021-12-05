@@ -1,3 +1,4 @@
+# -*- coding: utf8 -*-
 import os
 from dotenv import load_dotenv, find_dotenv
 import telebot
@@ -107,7 +108,9 @@ start_message = '<бот-нэйм> создан для проверки уров
 
 @bot.message_handler(commands=['start'])
 def get_text_message(message):
+
 	global status
+
 	if status == 3:
 		bot.send_message(message.from_user.id, 'Нельзя вернуться в меню во время теста')
 	else:
@@ -120,18 +123,21 @@ def get_text_message(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_inline(call):
+
 	global status, num_of_question, score, code, choice
+
 	if call.data == 'mainmenu':
-		status = 0
 		num_of_question = 0
 		mainmenu  =  types.InlineKeyboardMarkup()
-		bttns = [
-			types.InlineKeyboardButton(text = 'Записаться на тренинг', callback_data = 'key1'),
-			types.InlineKeyboardButton(text = 'Узнать о кибербезопасности', callback_data = 'key2')
-		]
+		bttns = [types.InlineKeyboardButton(text = 'Записаться на тренинг', callback_data = 'key1')]
+		if status == 4 : 
+			bttns.append(types.InlineKeyboardButton(text = 'Пройти финальный тест', callback_data = 'final_test'))
+		else:
+			bttns.append(types.InlineKeyboardButton(text = 'Узнать о кибербезопасности', callback_data = 'key2'))
 		mainmenu.add(*bttns)
 		bot.edit_message_text(start_message, call.message.chat.id, call.message.message_id,
 							  reply_markup = mainmenu)
+
 	elif call.data == 'key1':
 		next_menu = types.InlineKeyboardMarkup()
 		bttns = [
@@ -188,29 +194,100 @@ def callback_inline(call):
 		bot.send_message(call.message.chat.id, a_and_q[num_of_question][0], reply_markup = questions)
 
 	elif call.data == 'key4':
+		global themes
 		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
 		num_of_question = 0
-		themes = ''
-		print(score)
-		if score == [3,3,4]:
+		themes = [0, 0, 0]
+		if score == [1,1,1]:
 			status = 4 #Тут подправить статус на статус пройденного теста
 			next_menu4 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
-			bot.send_message(call.message.chat.id, f'Тест завершен, вы набрали максимум баллов!\nУ вас хороший уровень знаний\nДля завершения подготовки остается пройти финальный тест!', reply_markup = next_menu4)
+			bot.send_message(call.message.chat.id, f'Тест завершен, вы набрали максимум баллов!\nУ вас хороший уровень знаний\nДля завершения подготовки остается пройти финальный тест! Вернитесь в начало и нажмите "Пройти финальный тест"', reply_markup = next_menu4)
 		else:
 			next_menu5 = types.InlineKeyboardMarkup()
 			if score[0] != 1:
-				next_menu5.add(types.InlineKeyboardButton(text = 'Электронная почта', callback_data = 'theme1'))
+				themes[0] = 1
+				next_menu5.add(types.InlineKeyboardButton(text = 'Электронная почта', callback_data = 'theme_mails'))
 			if score[1] != 1:
-				next_menu5.add(types.InlineKeyboardButton(text = 'Пароли и учетный записи', callback_data = 'theme2'))
+				themes[1] = 1
+				next_menu5.add(types.InlineKeyboardButton(text = 'Пароли и учетный записи', callback_data = 'theme_passwords'))
 			if score[2] != 1:
-				next_menu5.add(types.InlineKeyboardButton(text = 'Соц сети и мессенджеры', callback_data = 'theme3'))
+				themes[2] = 1
+				next_menu5.add(types.InlineKeyboardButton(text = 'Соц сети и мессенджеры', callback_data = 'theme_social'))
 			summ = score[0] + score[1] + score [2] + 7
 			bot.send_message(call.message.chat.id, f'Вы набрали {summ} баллов, тест показал что некоторые темы вам незнакомы. Вам стоит узнать больше о правилах поведения в интернете.', reply_markup = next_menu5)
 
-		score = 0
-
-	elif call.data == 'accept':
+	#Подробности о темах
+	elif call.data == 'theme_mails':
+		next_menu6 = types.InlineKeyboardMarkup()
+		themes [0] = 0
 		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
+		if themes[1] == 1:
+			next_menu6.add(types.InlineKeyboardButton(text = 'Пароли и учетный записи', callback_data = 'theme_passwords'))
+		if themes[2] == 1:
+			next_menu6.add(types.InlineKeyboardButton(text = 'Соц сети и мессенджеры', callback_data = 'theme_passwords'))
+		next_menu6.add(types.InlineKeyboardButton(text = 'Подробнее', callback_data = 'details_theme_mails'))
+		next_menu6.add(types.InlineKeyboardButton(text = 'Вернуться в меню', callback_data = 'mainmenu'))
+		bot.send_message(call.message.chat.id, 'Электронная почта:\nСледует осторожно обходиться в электронными письмами. Чтобы не стать жертвой обмана следует:\n1. Проверить адрес отправителя. Сверьтесь с адресом почты на сайте компании/портала от которого пришло письмо.\n2. Если письмо от частного лица, не нажимайте на ссылки и не отправляйте никому личные данные.', reply_markup = next_menu6)
+	
+	elif call.data == 'theme_passwords':
+		next_menu6 = types.InlineKeyboardMarkup()
+		themes [1] = 0
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
+		if themes[0] == 1:
+			next_menu6.add(types.InlineKeyboardButton(text = 'Электронная почта', callback_data = 'theme_mails'))
+		if themes[2] == 1:
+			next_menu6.add(types.InlineKeyboardButton(text = 'Соц сети и мессенджеры', callback_data = 'theme_social'))
+		next_menu6.add(types.InlineKeyboardButton(text = 'Подробнее', callback_data = 'details_theme_passwords'))
+		next_menu6.add(types.InlineKeyboardButton(text = 'Вернуться в меню', callback_data = 'mainmenu'))
+		bot.send_message(call.message.chat.id, 'Пароли и учётные записи: \nСледует использовать надежные пароли содержащие одновременно:\n•    заглавные буквы\n•    строчные буквы\n•    цифры\n•    особые знаки, такие как  ! @ # $ % ^ & * ( ) - _ + = ; : , ./ ? | ` ~ [ ] { }\nСтарайтесь каждый раз использовать разные пароли. Частая ошибка это использование имени и года рождения в пароле. Такие пароли очень легко взломать, так как эти данные зачастую в открытом доступе.', reply_markup = next_menu6)
+	
+	elif call.data == 'theme_social':
+		next_menu6 = types.InlineKeyboardMarkup()
+		themes [2] = 0
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
+		if themes[0] == 1:
+			next_menu6.add(types.InlineKeyboardButton(text = 'Электронная почта', callback_data = 'theme_mails'))
+		if themes[1] == 1:
+			next_menu6.add(types.InlineKeyboardButton(text = 'Пароли и учетный записи', callback_data = 'theme_passwords'))
+		next_menu6.add(types.InlineKeyboardButton(text = 'Подробнее', callback_data = 'details_theme_passwords'))
+		next_menu6.add(types.InlineKeyboardButton(text = 'Вернуться в меню', callback_data = 'mainmenu'))
+		bot.send_message(call.message.chat.id, 'Соц сети и мессенджеры:\nВ социальных сетях ни с кем не стоит делиться личными данными и переводить деньги кому-либо, даже если вас просят об этом знакомые.\nМошенники могут создавать поддельные профили, схожие с профилями ваших знакомых.', reply_markup = next_menu6)
+
+	# Подробности о каждой теме
+	elif call.data == 'details_theme_mails':
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
+		details = types.InlineKeyboardMarkup()
+		if themes[1] == 1:
+			details.add(types.InlineKeyboardButton(text = 'Пароли и учетный записи', callback_data = 'theme_passwords'))
+		if themes[2] == 1:
+			details.add(types.InlineKeyboardButton(text = 'Соц сети и мессенджеры', callback_data = 'theme_social'))
+		details.add(types.InlineKeyboardButton(text = 'Вернуться в меню', callback_data = 'mainmenu'))
+		bot.send_message(call.message.chat.id, 'Эксперты центра цифровой экспертизы Роскачества совместно с экспертами по кибербезопасности из Group-IB, подготовили алгоритм из десяти шагов, который поможет распознать мошенническое письмо:\n1. Проверьте адрес отправителя\nМошенники часто делают адрес максимально похожим на компанию или организацию, которую они имитируют. Сравните данный адрес с другими письмами от оригинального отправителя.\n2. Обратите внимание на приветствие\nОбезличенное «привет» или «здравствуйте» — признак того, что письмо отправили мошенники.\n3. Проверьте контактную информацию и сверьте даты\nВнизу письма обязательно должна содержаться информация о том, как связаться с адресантом. Электронная почта, адрес, номер телефона, соцсети — всё это обязательно должно быть в письме от оригинального отправителя. Часто мошенники забывают проверить даты. Если, к примеру, конкурс, о котором идёт речь, должен завершиться в 2017 году, когда на дворе — 2020, вероятно, вам попался невнимательный мошенник, который вставил в тело письма устаревший шаблон.\n4. Проверьте бренд\nМошенники часто вводят в заблуждение пользователя с помощью электронных писем, в которых они называют себя представителями крупного бренда, компании, ведомства или розничной сети. Чтобы не попасться на эту удочку, необходимо внимательно проверить качество и оригинальность фирменных логотипов.\n5. Проверьте подлинность сайта\nЕсли вы уже перешли на сайт, на который ведёт письмо, проверьте его подлинность. Если это крупный бренд или компания, просто откройте новую вкладку и найдите их официальную страницу, а затем сравните URL-адреса.\nЗлоумышленники всё чаще используют в письмах ссылки, запускающие загрузку вредоносных объектов. Избегайте соблазна быстро перейти по ссылке из письма, даже если вас просят сделать это, чтобы получить доступ к важной информации или сообщению в своем аккаунте.\n6. Игнорируйте запросы личных и, тем более, банковских реквизитов\nЕсли в электронном письме вас просят обновить или повторно ввести свои личные данные или банковские реквизиты, вероятнее всего, это мошенники. Запомните: номер вашей карты, пин-код или код безопасности карты, девичья фамилия вашей матери и прочие вопросы — это персональная информация, делиться которой нельзя. Крупные компании и организации дорожат своей репутацией и не будут собирать личную информацию по электронной почте.\n7. Проверьте письмо на грамотность и стилистику\nОшибки в тексте письма сигнализируют о том, что его создатель не утруждал себя проверкой орфографии. Организация с репутацией такого позволить себе не может. Различные стили и размеры шрифта, несоответствие логотипов, некачественные изображения — всё это говорит о том, что письмо фейковое, и сделано оно «на скорую руку».\n8. Обращайте внимание на слишком официальные письма\nВряд ли оригинальный крупный интернет-магазин или ведомство станут описывать в письмах, какие они важные и официальные.\n9. Торопят — закрывайте письмо\nМошенники будут пытаться давить на вас с помощью быстро сгорающих предложений и эксклюзивных сделок. Потратьте время, чтобы проверить подлинность письма и его содержания, за это время предложение от вас никуда не денется. Лучше упустить подлинное предложение, чем рисковать своими платёжными и другими персональными данными.\n10. Самое главное оружие — связь с реальной компанией\nЕсли вы хотите быстро убедиться в оригинальности письма, которое получили, самостоятельно свяжитесь с отправителем. Конечно, звонить вы должны по номеру, указанному не в письме, а оригинальном сайте.\nПомните, что в интернете нет ничего абсолютно безопасного.', reply_markup = details)
+
+	elif call.data == 'details_theme_passwords':
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
+		details = types.InlineKeyboardMarkup()
+		if themes[0] == 1:
+			details.add(types.InlineKeyboardButton(text = 'Электронная почта', callback_data = 'theme_emails'))
+		if themes[2] == 1:
+			details.add(types.InlineKeyboardButton(text = 'Соц сети и мессенджеры', callback_data = 'theme_social'))
+		details.add(types.InlineKeyboardButton(text = 'Вернуться в меню', callback_data = 'mainmenu'))
+		bot.send_message(call.message.chat.id, 'Это основной способ защиты ваших личных данных в интернете, поэтому к нему нужно отнестись с особым вниманием.\nНе храните информацию о паролях на компьютере, который используется для выхода в интернет. Конечно, лучше всего держать пароли в голове. Если же пароль слишком сложный, лучше запишите его отдельно на лист бумаги или в блокнот, и храните в надёжном месте.\nПользуйтесь двухэтапной аутентификацией — так ваши аккаунты будут надёжно защищены. Регулярно проверяйте почту и SMS-сообщения — если вам приходят подозрительные уведомления, вы всегда сможете пресечь попытки злоумышленников.\nНе используйте для паролей информацию, которую злоумышленники могут найти самостоятельно: дату рождения, номера документов, телефонов, имена ваших друзей и родственников, адрес и так далее.\nПридумывайте сложные пароли длиной не менее 8 символов с использованием заглавных и строчных букв, цифр, специальных значков %$#.\nНе используйте одинаковые пароли на разных сайтах.\nРегулярно меняйте пароли.\n', reply_markup = details)
+
+	elif call.data == 'details_theme_social':
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
+		details = types.InlineKeyboardMarkup()
+		if themes[0] == 1:
+			details.add(types.InlineKeyboardButton(text = 'Электронная почта', callback_data = 'theme_emails'))
+		if themes[1] == 1:
+			details.add(types.InlineKeyboardButton(text = 'Пароли и учётные записи', callback_data = 'theme_passwords'))
+		details.add(types.InlineKeyboardButton(text = 'Вернуться в меню', callback_data = 'mainmenu'))
+		bot.send_message(call.message.chat.id, 'Заполучить ваши данные из социальных сетей можно двумя способами: простым и сложным.\nСложный способ подразумевает непосредственный взлом вашего соединения или устройства. Если хакер знает ваш IP-адрес или ваше имя, ему не составит труда выяснить, кто вы такой. Если, к тому же, он узнает ваш номер телефона, привязанный к IP, то можете считать себя уже взломанным. Эти взломы – как раз та главная причина, по которой у вас должен быть VPN на всех устройствах, где установлены социальные сети.\nОднако есть и более простой способ стать жертвой кражи данных или личности. Сообщая кому-то номер телефона, который вы используете для двухфакторной аутентификации, а также напрямую делясь личной информацией, вы ставите себя под удар. Хакеру не нужно будет делать ничего, кроме как просто спросить.\nНеобходимо всегда скептически относиться к подозрительным профилям людей, с которыми вы лично не знакомы. Есть огромная вероятность того, что хакер скрывается за таким фейковым аккаунтом. Подобные аферисты – искусные психологи и манипуляторы, которые точно знают, как играть на чувствах и эмоциях людей.\nлавное правило интернета гласит: если что-то звучит слишком хорошо, чтобы быть правдой – это обман.', reply_markup = details)
+
+
+	# Процесс подтверждения почты
+	elif call.data == 'accept':
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = 'theme_social')
 		status = 10
 	elif call.data == 'resend':
 		status = 11
@@ -235,14 +312,13 @@ def get_text_message(message):
 			if message.text == a_and_q[num_of_question][a_and_q[num_of_question][5]]:
 				if num_of_question in [0,1,2]:
 					score[0] += 1
-				elif num_of_question in [3,4,5]:
+				elif num_of_question in [3,4,5,6]:
 					score[1] += 1
-				elif num_of_question in [6,7,8,9]:
+				elif num_of_question in [7,8,9]:
 					score[2] += 1
 				bot.send_message(message.from_user.id, 'Ответ правильный!', reply_markup = stage1)
 			else:
 				bot.send_message(message.from_user.id, 'Ответ неверный :с', reply_markup = stage1) #Написать почему!
-			print(score)
 		else:
 			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Завершить тест', callback_data = 'key4'))
 			if message.text == a_and_q[num_of_question][a_and_q[num_of_question][5]]:
@@ -278,13 +354,16 @@ def get_text_message(message):
 	elif status == 11 and message.text == 'Исправить почту':
 		change_mail = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Изменить почту', callback_data = 'change_mail'))
 		bot.send_message(message.from_user.id, 'Нажмите кнопку "Изменить почту" и отправьте новую.', reply_markup = change_mail)
+
 	elif status == 11 and message.text == 'Отправить заново':
 		code = sandler.sendMail(users_mail)
 		accept = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
 		bot.send_message(message.from_user.id, 'Мы отправили повторно на вашу почту код подтверждения, когда вы его получите, нажмите кнопку "Ввести код" и введите код', reply_markup = accept)
+	
 	elif status == 11 and message.text == 'Повторить ввод кода':
 		accept = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
 		bot.send_message(message.from_user.id, 'Хорошо, попробуйте еще раз.', reply_markup = accept)
+
 	else:
 		bot.send_message(message.from_user.id, 'Я вас не понимаю... :с')
 

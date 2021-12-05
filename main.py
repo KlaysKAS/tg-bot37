@@ -11,7 +11,7 @@ db = DB(os.environ.get('DATABASE_URL'))  # Экземпляр
 global a_and_q, num_of_question, status, score
 
 num_of_question = 0
-score = [-2,-2,-2]
+score = [-2, -2, -3]
 status = -1111
 a_and_q = [
 	[
@@ -180,19 +180,19 @@ def callback_inline(call):
 		num_of_question = 0
 		themes = ''
 		print(score)
-		if score == [1,1,1]:
+		if score == [3,3,4]:
 			status = 4 #Тут подправить статус на статус пройденного теста
 			next_menu4 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
 			bot.send_message(call.message.chat.id, f'Тест завершен, вы набрали максимум баллов!\nУ вас хороший уровень знаний\nДля завершения подготовки остается пройти финальный тест!', reply_markup = next_menu4)
 		else:
 			next_menu5 = types.InlineKeyboardMarkup()
 			if score[0] != 1:
-				next_menu5.add(types.InlineKeyboardButton(text = 'Тема 1', callback_data = 'theme1'))
-			elif score[1] != 1:
-				next_menu5.add(types.InlineKeyboardButton(text = 'Тема 2', callback_data = 'theme2'))
-			elif score[2] != 1:
-				next_menu5.add(types.InlineKeyboardButton(text = 'Тема 3', callback_data = 'theme3'))
-			summ = score[0] + score[1] + score [2] + 6
+				next_menu5.add(types.InlineKeyboardButton(text = 'Электронная почта', callback_data = 'theme1'))
+			if score[1] != 1:
+				next_menu5.add(types.InlineKeyboardButton(text = 'Пароли и учетный записи', callback_data = 'theme2'))
+			if score[2] != 1:
+				next_menu5.add(types.InlineKeyboardButton(text = 'Соц сети и мессенджеры', callback_data = 'theme3'))
+			summ = score[0] + score[1] + score [2] + 7
 			bot.send_message(call.message.chat.id, f'Вы набрали {summ} баллов, тест показал что некоторые темы вам незнакомы. Вам стоит узнать больше о правилах поведения в интернете.', reply_markup = next_menu5)
 
 		score = 0
@@ -203,19 +203,20 @@ def callback_inline(call):
 @bot.message_handler(content_types = ['text'])
 def get_text_message(message):
 	global status, num_of_question, score
-	if (status == 3) and (message.text in a_and_q[num_of_question][1:-1]): #прописать условие состояния
+	if (status == 3) and (message.text in a_and_q[num_of_question][1:-1]):
 		if num_of_question != 9:
 			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Следующий вопрос!', callback_data = 'key3'))
 			if message.text == a_and_q[num_of_question][a_and_q[num_of_question][5]]:
-				if num_of_question in [1,2,3]:
+				if num_of_question in [0,1,2]:
 					score[0] += 1
-				elif num_of_question in [4,6]:
+				elif num_of_question in [3,4,5]:
 					score[1] += 1
-				elif num_of_question in [7,8,9]:
+				elif num_of_question in [6,7,8,9]:
 					score[2] += 1
 				bot.send_message(message.from_user.id, 'Ответ правильный!', reply_markup = stage1)
 			else:
 				bot.send_message(message.from_user.id, 'Ответ неверный :с', reply_markup = stage1) #Написать почему!
+			print(score)
 		else:
 			stage1 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Завершить тест', callback_data = 'key4'))
 			if message.text == a_and_q[num_of_question][a_and_q[num_of_question][5]]:

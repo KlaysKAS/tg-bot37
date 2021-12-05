@@ -115,26 +115,26 @@ def callback_inline(call):
 
 	elif call.data == 'choice0':
 		status = 2
-		choice = 'social_networking'
+		db.registerUser(call.message.from_user.id, 'social_networking')
 		next_menu3 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
-		next_menu3.add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
-		bot.edit_message_text('Чтобы записаться на тренинг мы отрпавили вам код подтверждения на почту, нажмите кнопку "Ввести код" и отправьте код', call.message.chat.id, call.message.message_id,
+		next_menu3.add(types.InlineKeyboardButton(text = 'Подтвердить', callback_data = 'accept_course'))
+		bot.edit_message_text('Подтвердите запись на тренинг по теме "Поведение в социальных сетях и мессенджерах"', call.message.chat.id, call.message.message_id,
 							  reply_markup = next_menu3)
 
 	elif call.data == 'choice1':
 		status = 2
-		choice = 'passwords'
+		db.registerUser(call.message.from_user.id, 'passwords')
 		next_menu3 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
-		next_menu3.add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
-		bot.edit_message_text('Чтобы записаться на тренинг мы отрпавили вам код подтверждения на почту, нажмите кнопку "Ввести код" и отправьте код', call.message.chat.id, call.message.message_id,
+		next_menu3.add(types.InlineKeyboardButton(text = 'Подтвердить', callback_data = 'accept_course'))
+		bot.edit_message_text('Подтвердите запись на тренинг по теме "Пароли и учетные записи"', call.message.chat.id, call.message.message_id,
 							  reply_markup = next_menu3)
 
 	elif call.data == 'choice2':
 		status = 2
-		choice = 'email'
+		db.registerUser(call.message.from_user.id, 'email')
 		next_menu3 = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
-		next_menu3.add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
-		bot.edit_message_text('Чтобы записаться на тренинг мы отрпавили вам код подтверждения на почту, нажмите кнопку "Ввести код" и отправьте код', call.message.chat.id, call.message.message_id,
+		next_menu3.add(types.InlineKeyboardButton(text = 'Подтвердить', callback_data = 'accept_course'))
+		bot.edit_message_text('Подтвердите запись на тренинг по теме "Электронная почта"', call.message.chat.id, call.message.message_id,
 							  reply_markup = next_menu3)
 
 
@@ -295,13 +295,17 @@ def callback_inline(call):
 			questions.row(i)
 		bot.send_message(call.message.chat.id, final_test[num_of_question][0], reply_markup = questions)
 
+	elif call.data == 'accept_course':
+		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
+		mainmenu = types.InlineKeyboardMarkup()
+		mainmenu.add(types.InlineKeyboardButton(text = 'Вернуться в меню', callback_data = 'mainmenu'))
+		bot.send_message(call.message.chat.id, 'Вы успешно зарегистрировались на тренинг.', reply_markup = mainmenu)
 	# Процесс подтверждения почты
 	elif call.data == 'accept':
 		bot.edit_message_reply_markup(call.message.chat.id, message_id = call.message.message_id, reply_markup = '')
 		status = 10
 	elif call.data == 'resend':
 		status = 11
-		global users_mail
 		code = sandler.sendMail(message.text)
 		accept = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
 		bot.send_message(message.from_user.id, 'Мы отправили повторно на вашу почту код подтверждения, когда вы его получите, нажмите кнопку "Ввести код" и введите код', reply_markup = accept)
@@ -363,11 +367,10 @@ def get_text_message(message):
 	elif status == 2:
 		try:
 			if message.text.split('@')[1] == 'yandex.ru': #Прописать поиск по базе
-				global code, users_mail
-				users_mail = message.text
-				code = sandler.sendMail(users_mail)
+				global code
+				code = sandler.sendMail(message.text)
 				accept = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
-				bot.send_message(message.from_user.id, 'Мы отправили на вашу почту код подтверждения, когда вы его получите, нажмите кнопку "Ввести код" и введите код', reply_markup = accept)
+				bot.send_message(message.from_user.id, 'Мы отправили на вашу почту код подтверждения, когда вы его получите нажмите кнопку "Ввести код" и введите код', reply_markup = accept)
 			else:
 				bot.send_message(message.from_user.id, 'Неверная почта')
 		except Exception as e:
@@ -377,7 +380,6 @@ def get_text_message(message):
 		if code == message.text:
 			mainmenu = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Вернуться в начало', callback_data = 'mainmenu'))
 			bot.send_message(message.from_user.id, 'Вы успешно авторизованы', reply_markup = mainmenu)
-			# db.registerUser(users_mail, message.from_user.id, choice)
 			status = 0
 		else:
 			resend = types.ReplyKeyboardMarkup(one_time_keyboard = True, resize_keyboard = True,).row('Отправить заново').row('Исправить почту').row('Повторить ввод кода')
@@ -390,7 +392,7 @@ def get_text_message(message):
 	elif status == 11 and message.text == 'Отправить заново':
 		code = sandler.sendMail(users_mail)
 		accept = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
-		bot.send_message(message.from_user.id, 'Мы отправили повторно на вашу почту код подтверждения, когда вы его получите, нажмите кнопку "Ввести код" и введите код', reply_markup = accept)
+		bot.send_message(message.from_user.id, 'Мы отправили повторно на вашу почту код подтверждения, когда вы его получите нажмите кнопку "Ввести код" и введите код', reply_markup = accept)
 	
 	elif status == 11 and message.text == 'Повторить ввод кода':
 		accept = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton(text = 'Ввести код', callback_data = 'accept'))
@@ -400,4 +402,3 @@ def get_text_message(message):
 		bot.send_message(message.from_user.id, 'Я вас не понимаю... :с')
 
 bot.polling(none_stop = True, interval = 0)
-#.

@@ -4,26 +4,32 @@ import pandas as pd
 from pathlib import Path
 
 
+""" Создаёт excel файл с результатами прохождения финального теста всеми людьми из корпорации
+    Возвращает имя файла | файл находится в директории results/"""
 def createXLSX(name, data):
-    names = []
-    email = []
-    results = []
-    for elem in data:
-        names.append(elem[0])
-        email.append(elem[1])
-        results.append(elem[2])
+    try:
+        names = []
+        email = []
+        results = []
+        for elem in data:
+            names.append(elem[0])
+            email.append(elem[1])
+            results.append(elem[2])
 
-    df = pd.DataFrame({
-        'Имя': names,
-        'Почта': email,
-        'Результат теста': results
-    })
-    name = "{}.xlsx".format(name)
-    os.makedirs(Path('results'), exist_ok=True)
-    filepath = Path('results/{}'.format(name))
-    filepath.touch(exist_ok=True)
-    df.to_excel(('results/' + name), index=False)
-    return name
+        df = pd.DataFrame({
+            'Имя': names,
+            'Почта': email,
+            'Результат теста': results
+        })
+        name = "{}.xlsx".format(name)
+        os.makedirs(Path('results'), exist_ok=True)
+        filepath = Path('results/{}'.format(name))
+        filepath.touch(exist_ok=True)
+        df.to_excel(('results/' + name), index=False)
+        return name
+    except Exception as error:
+        print("create Report is failed")
+        return ""
 
 
 class DB(object):
@@ -48,8 +54,7 @@ class DB(object):
     """Добавляет пользователя в таблицу пользователей, которые могут проходить курс
         users = [{
             'email': *user's email*
-        }]
-    """
+        }]"""
     def addUsers(self, users):
         cur = 0
         try:
@@ -66,8 +71,7 @@ class DB(object):
         return False
 
     """Регистрирует пользователя на прохождение курса, если ему разрешен доступ
-        course: banks, passwords, social_networking
-    """
+        course: banks, passwords, social_networking"""
     def registerUser(self, email, telegram_id, course):
         cur = 0
         try:
@@ -138,6 +142,8 @@ class DB(object):
             cur.close()
         return False
 
+    """Проверяет, может ли данный пользователь получить результаты курса, создаёт файл и возвращает имя, если может
+        Если не может, печатает в консоль сообщение об ошибке доступа и возвращает None"""
     def getReport(self, telegram_id):
         cur = self.conn.cursor()
         cur.execute("SELECT id, email FROM users WHERE telegram_id = {} LIMIT 1".format(telegram_id))
@@ -152,7 +158,7 @@ class DB(object):
             print("Access not granted or user is not defined")
             if cur:
                 cur.close()
-            return []
+            return None
 
     version = 5
     migrations = [
@@ -189,6 +195,7 @@ class DB(object):
         ]
     ]
 
+    """Проверяет актуальную версию базы данных и обновляет её, если версия ниже"""
     def __checkMigrationAndMigrate(self):
         cur = self.conn.cursor()
         cur.execute("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='migrations'")
